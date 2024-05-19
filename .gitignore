@@ -57,4 +57,11 @@ build/
 ### VS Code ###
 .vscode/
 
+### Index Documents ###
+core/documents/*
+
+### libs ###
+
+explorertools/src/lib/*
+
 

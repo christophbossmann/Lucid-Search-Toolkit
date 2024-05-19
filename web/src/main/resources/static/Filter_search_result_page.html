@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Filter search result page - Bootdey.com</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://netdna.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            margin-top: 20px;
+            background: #eee;
+        }
+
+        .btn {
+            margin-bottom: 5px;
+        }
+
+        .grid {
+            position: relative;
+            width: 100%;
+            background: #fff;
+            color: #666666;
+            border-radius: 2px;
+            margin-bottom: 25px;
+            box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .grid .grid-body {
+            padding: 15px 20px 15px 20px;
+            font-size: 0.9em;
+            line-height: 1.9em;
+        }
+
+        .search table tr td.rate {
+            color: #f39c12;
+            line-height: 50px;
+        }
+
+        .search table tr:hover {
+            cursor: pointer;
+        }
+
+        .search table tr td.image {
+            width: 50px;
+        }
+
+        .search table tr td img {
+            width: 50px;
+            height: 50px;
+        }
+
+        .search table tr td.rate {
+            color: #f39c12;
+            line-height: 50px;
+        }
+
+        .search table tr td.price {
+            font-size: 1.5em;
+            line-height: 50px;
+        }
+
+        .search table tr td.score {
+            font-size: 1.2em;
+            line-height: 50px;
+        }
+
+        .search table tr td.fileformat {
+            font-size: 1.2em;
+            line-height: 50px;
+        }
+
+        .search table tr td.lastmodified {
+            font-size: 1.2em;
+            line-height: 50px;
+        }
+
+        .search #price1,
+        .search #price2 {
+            display: inline;
+            font-weight: 600;
+        }
+
+        /* below is customization ! */
+
+        textarea {
+            resize: none;
+        }
+
+        @media (min-width:1600px) {
+
+            .container,
+            .container-lg,
+            .container-md,
+            .container-sm,
+            .container-xl {
+                width: 1500px
+            }
+        }
+
+        @media (min-width:960px) {
+
+            .container,
+            .container-lg,
+            .container-md,
+            .container-sm,
+            .container-xl {
+                padding-right: 30px;
+                padding-left: 30px;
+            }
+        }
+    </style>
+
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript"></script>
+    <script>
+        console.log('This is a log message');
+    </script>
+
+    <script>
+        $(document).ready(function(){
+            $('table').on('click', 'tr', function(){
+                console.log('Click handler executed!');
+                var href = $(this).data('href');
+                console.log('Navigating to:', href);  // Log the URL to the console
+                if (href) {
+                    window.open(href, '_blank');
+                    //window.location.href = href; //opens in same tab
+                } else {
+                    console.error('No href found for this row.');  // Log an error if href is undefined
+                }
+            });
+        });
+    </script>
+
+</head>
+
+<body>
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+    <div class="container">
+        <div class="row">
+
+            <div class="col-md-12">
+                <div class="grid search">
+                    <div class="grid-body">
+                        <div class="row">
+
+                            <div class="col-md-3">
+                                <h2 class="grid-title"><i class="fa fa-cog" aria-hidden="true"></i> Settings</h2>
+                                <hr>
+                                <div class="input-group">
+                                    <label>
+                                        Enter number of search results:
+                                        <input id="inputNumberOfSearchResults" type="number" min="1" max="100" step="1"
+                                            class="form-control" value="20">
+                                    </label>
+                                </div>
+                                <div class="checkbox">
+                                    <label><input id="checkboxMultifieldSearch" type="checkbox" class="icheck">
+                                        Multifield search</label>
+                                </div>
+
+                                <h3 class="grid-title"><i class="fa fa-filter"></i> Filters</h3>
+
+                                <div class="input-group">
+                                    <label>Path:
+                                        <textarea id="inputPath" class="form-control" rows="5"
+                                            placeholder="Enter path to search in. Leave empty to search everywhere within index range!"></textarea>
+                                    </label>
+                                </div>
+                            </div>
+
+
+                            <div class="col-md-9">
+                                <h2><i class="fa fa-file-o"></i> Result</h2>
+                                <hr>
+
+                                <div class="input-group">
+                                    <input id="searchinputField" type="text" class="form-control"
+                                        placeholder="Enter search request or query here">
+                                    <span class="input-group-btn">
+                                        <button id="searchButton" class="btn btn-primary" type="button"><i
+                                                class="fa fa-search"></i></button>
+                                        <script>
+
+                                            document.getElementById("searchButton").addEventListener("click", fetchData);
+
+                                            function fetchData() {
+                                                document.getElementById("resulttable").innerHTML = ''; //remove all previous search results
+
+                                                const searchString = encodeURI(document.getElementById("searchinputField").value);
+                                                const numberOfSearchResults = encodeURI(document.getElementById("inputNumberOfSearchResults").value);
+                                                const multifieldSearch = encodeURI(document.getElementById("checkboxMultifieldSearch").checked);
+                                                const path = encodeURI(document.getElementById("inputPath").value);
+                                                
+                                                document.getElementById("displaySearchString").textContent = document.getElementById("searchinputField").value;
+
+                                                const getRequestUrl = 'http://localhost:8080/api/searchprovider/1/search?searchString=' + searchString + '&searchPath=' + path + '&numberOfResults=' + numberOfSearchResults + '&multifield=' + multifieldSearch;
+                                                console.log("get request url: " + getRequestUrl)
+                                                fetch(getRequestUrl)
+                                                    .then(res => {
+                                                        return res.json();
+                                                    })
+                                                    .then(data => {
+                                                        let index = 0
+                                                        data.SearchResults.forEach(result => {
+                                                            index += 1;
+                                                            let path;
+                                                            let fileformat;
+                                                            let lastmodified;
+                                                            result.fields.forEach(field => {
+                                                                switch (field.name) {
+                                                                    case "path":
+                                                                        path = field.value;
+                                                                        break;
+                                                                    case "extension":
+                                                                        fileformat = field.value;
+                                                                        break;
+                                                                    case "modified":
+                                                                        lastmodified = field.value;
+                                                                        break;
+                                                                }
+                                                            });
+                                                            const markup = `<tr data-href="http://apple.com">
+                                                        <td class="number text-center">${index}</td>
+                                                        <td class="product"><strong>${path}</strong><br>Search result description 1</td>
+                                                        <td class="score text-right">${result.score}</td>
+                                                        <td class="fileformat text-right">${fileformat}</td>
+                                                        <td class="lastmodified text-right">${lastmodified}</td>
+                                                    </tr>`;
+                                                            document.querySelector('#resulttable').insertAdjacentHTML('beforeend', markup)
+
+                                                        });
+                                                    }).catch(error => console.log(error));
+                                            }
+                                        </script>
+                                    </span>
+                                </div>
+
+                                <p>Showing all results matching: <span id="displaySearchString"></span></p>
+                                <div class="padding"></div>
+                                <div class="row">
+
+                                    <div class="col-sm-6">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-default dropdown-toggle"
+                                                data-toggle="dropdown">
+                                                Order by <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu" role="menu">
+                                                <li><a href="#">Name</a></li>
+                                                <li><a href="#">Date</a></li>
+                                                <li><a href="#">View</a></li>
+                                                <li><a href="#">Rating</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 text-right">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-default active"><i
+                                                    class="fa fa-list"></i></button>
+                                            <button type="button" class="btn btn-default"><i
+                                                    class="fa fa-th"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <tbody id="resulttable">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+
+                                <ul class="pagination">
+                                    <li class="disabled"><a href="#">«</a></li>
+                                    <li class="active"><a href="#">1</a></li>
+                                    <li><a href="#">2</a></li>
+                                    <li><a href="#">3</a></li>
+                                    <li><a href="#">4</a></li>
+                                    <li><a href="#">5</a></li>
+                                    <li><a href="#">»</a></li>
+                                </ul>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <button id="openFolderBtn">Open Folder</button>
+
+    <script>
+        document.getElementById('openFolderBtn').addEventListener('click', function() {
+            window.location.href = 'file:///C:/users';
+        });
+    </script>
+
+</body>
+
+</html>
