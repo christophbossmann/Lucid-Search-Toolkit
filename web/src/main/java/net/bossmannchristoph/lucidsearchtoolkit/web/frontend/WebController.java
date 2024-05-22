@@ -1,4 +1,4 @@
-package net.bossmannchristoph.lucidsearchtoolkit.web.web;
+package net.bossmannchristoph.lucidsearchtoolkit.web.frontend;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

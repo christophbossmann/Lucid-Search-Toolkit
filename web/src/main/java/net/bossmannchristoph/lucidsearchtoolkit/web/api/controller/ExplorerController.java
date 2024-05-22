@@ -1,65 +1,74 @@
 package net.bossmannchristoph.lucidsearchtoolkit.web.api.controller;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import net.bossmannchristoph.lucidsearchtoolkit.web.api.model.MRootFilePath;
+import net.bossmannchristoph.lucidsearchtoolkit.web.api.model.MRootFilePaths;
+import net.bossmannchristoph.lucidsearchtoolkit.web.api.service.ExplorerService;
+import net.bossmannchristoph.lucidsearchtoolkit.web.exception.ApplicationException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-import java.nio.file.Paths;
+import java.time.LocalDateTime;
 
 @RestController
 public class ExplorerController {
 
-    @RequestMapping(value = "openfolder", method = RequestMethod.GET)
-    public String openFolder(@RequestParam String path) {
-        try {
-            osOpenFolder(path);
-            return "Browser successfully opened!!";
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            return "ERROR while opening browser!";
+    @Autowired
+    private ExplorerService explorerService;
+
+    public record ExplorerResult(LocalDateTime timestamp, int statuscode, String status, String message) {
+        @Override
+        public String toString() {
+            return "ExplorerResult{" +
+                    "timestamp=" + timestamp +
+                    ", statuscode=" + statuscode +
+                    ", status='" + status + '\'' +
+                    ", message='" + message + '\'' +
+                    '}';
         }
     }
 
-    @RequestMapping(value = "openfolderselectfile", method = RequestMethod.GET)
-    public String openFolderSelectFile(@RequestParam String path) {
-        String absolutePath = Paths.get(path).toAbsolutePath().toString();
-        System.out.println("openfolderselectfile absolute path: " +  absolutePath);
-        try {
-            osOpenFolderAndSelectObject(path);
-            //osOpenFolderAndSelectObject("C:\\Users\\chris");
-            return "Browser successfully opened and selected file!!";
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            return "ERROR while opening browser and selecting file!";
-        }
+    @RequestMapping(value = "api/explorer/openfile", method = RequestMethod.GET)
+    public ExplorerResult openfile(@RequestParam String path) throws ApplicationException {
+        explorerService.openFile(path);
+        return new ExplorerResult(LocalDateTime.now(), HttpStatus.OK.value(), "OPEN_FILE_SUCCESSFUL",
+                "Opened file with path '" + path + "' successully!");
     }
 
-    public static void osOpenFolder(String path) throws IOException {
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("win")) {
-            String command = "powershell.exe -command \"Start-Process explorer.exe -ArgumentList '" + path + "' -WindowStyle Maximized\"";
-            Process process = Runtime.getRuntime().exec(command);
-            long pid = process.pid();
-            System.out.println("Process id: " + pid);
-
-        }
-        else {
-            throw new UnsupportedOperationException("Unsupported operating system");
-        }
+    @RequestMapping(value = "api/explorer/openfilerelative", method = RequestMethod.GET)
+    public ExplorerResult openfileRelative(@RequestParam String path, @RequestParam int searchproviderid)
+            throws ApplicationException {
+        explorerService.openFileRelative(path, searchproviderid);
+        return new ExplorerResult(LocalDateTime.now(), HttpStatus.OK.value(), "OPEN_FILE_SUCCESSFUL",
+                "Opened file with path '" + path + "' successully!");
     }
 
-    public static void osOpenFolderAndSelectObject(String path) throws IOException {
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("win")) {
-            String command = "powershell.exe \"Start-Process explorer.exe -ArgumentList @('/select,', '" + path + "') -WindowStyle Maximized\"";
-            System.out.println("Print command: " + command);
-            Runtime.getRuntime().exec(command);
-        } else {
-            throw new UnsupportedOperationException("Unsupported operating system");
-        }
+    @RequestMapping(value = "api/explorer/navigateandselect", method = RequestMethod.GET)
+    public ExplorerResult navigateAndSelect(@RequestParam String path) throws ApplicationException  {
+        explorerService.navigateAndSelect(path);
+        return new ExplorerResult(LocalDateTime.now(), HttpStatus.OK.value(), "NAVIGATE_SELECT_SUCCESSFUL",
+                "Navigated to object'" + path + "' and selected it in explorer successully!");
     }
+
+    @RequestMapping(value = "api/explorer/navigateandselectrelative", method = RequestMethod.GET)
+    public ExplorerResult navigateAndSelectRelative(@RequestParam String path, @RequestParam int searchproviderid)
+            throws ApplicationException {
+        explorerService.navigateAndSelectRelative(path,  searchproviderid);
+        return new ExplorerResult(LocalDateTime.now(), HttpStatus.OK.value(), "NAVIGATE_SELECT_SUCCESSFUL",
+                "Navigated to object'" + path + "' and selected it in explorer successully!");
+    }
+
+    @RequestMapping(value = "api/explorer/rootfilepaths", method = RequestMethod.GET)
+    public MRootFilePaths getRootFilePaths() {
+        return new MRootFilePaths(explorerService.getRootFilePaths(), LocalDateTime.now(),
+                HttpStatus.OK.value(), "RETURN_ROOT_FILE_PATHS_SUCCESSFUL");
+    }
+
+    @RequestMapping(value = "api/explorer/rootfilepath/{searchProviderId}", method = RequestMethod.GET)
+    public MRootFilePath getRootFilePath(@PathVariable int searchProviderId) throws ApplicationException {
+        String rootFilePath = explorerService.getRootFilePath(searchProviderId);
+        return new MRootFilePath(LocalDateTime.now(), HttpStatus.OK.value(),
+                "RETURN_ROOT_FILE_PATH_SUCCESSFUL", searchProviderId, rootFilePath );
+    }
+
 }

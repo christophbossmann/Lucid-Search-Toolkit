@@ -7,20 +7,27 @@ import org.apache.lucene.index.IndexableField;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SResult {
+public class MSearchResult {
 
     @JsonIgnore
     SearchResult searchResult;
+
+    private final int searchproviderid;
     private final float score;
     private final List<Field> fields;
 
-    public SResult(SearchResult searchResult) {
+    public MSearchResult(SearchResult searchResult, int searchproviderid) {
+        this.searchproviderid = searchproviderid;
         this.searchResult = searchResult;
         this.score = searchResult.getScoreDoc().score;
         fields = new ArrayList<>();
         for(IndexableField indexableField : searchResult.getDocument().getFields()) {
             fields.add(new Field(indexableField));
         }
+    }
+
+    public int getSearchproviderid() {
+        return searchproviderid;
     }
     public float getScore() {
         return score;
@@ -42,7 +49,6 @@ public class SResult {
             }
 
         }
-
         public String getName() {
             return name;
         }

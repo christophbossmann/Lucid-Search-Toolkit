@@ -3,6 +3,8 @@ package net.bossmannchristoph.lucidsearchtoolkit.web.api.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import net.bossmannchristoph.lucidsearchtoolkit.core.searcher.LuceneSearcher;
 
+import java.util.Optional;
+
 public class SearchProvider {
 
 
@@ -10,6 +12,7 @@ public class SearchProvider {
     private LuceneSearcher luceneSearcher;
     private final Integer id;
     private final String name;
+
     public SearchProvider(Integer id, String name, String indexPath, String outputPath) {
         this.id = id;
         this.name = name;

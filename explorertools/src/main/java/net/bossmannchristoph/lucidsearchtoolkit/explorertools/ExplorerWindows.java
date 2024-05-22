@@ -1,16 +1,14 @@
 package net.bossmannchristoph.lucidsearchtoolkit.explorertools;
 
 import com.jacob.activeX.ActiveXComponent;
-import com.jacob.com.ComThread;
-import com.jacob.com.Dispatch;
-import com.jacob.com.EnumVariant;
-import com.jacob.com.Variant;
+import com.jacob.com.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -55,12 +53,18 @@ public class ExplorerWindows implements IExplorer {
                 Optional<Dispatch> optionalDispatch = openNewWindow(path);
                 optionalDispatch.ifPresent(d -> window = new ActiveXComponent(d));
 
-
             }
             else {
-                LOGGER.log(Level.DEBUG, "Navigate in existing window with HWND: " +
-                        Dispatch.get(window, "HWND"));
-                window.invoke("Navigate", path);
+                try {
+                    LOGGER.log(Level.DEBUG, "Navigate in existing window with HWND: " +
+                            Dispatch.get(window, "HWND"));
+                    window.invoke("Navigate", path);
+                }
+                catch(ComFailException e) {
+                    LOGGER.log(Level.DEBUG, "Window closed? -> Open new window for navigation ...");
+                    Optional<Dispatch> optionalDispatch = openNewWindow(path);
+                    optionalDispatch.ifPresent(d -> window = new ActiveXComponent(d));
+                }
             }
             Thread.sleep(500);
         }
@@ -104,38 +108,57 @@ public class ExplorerWindows implements IExplorer {
     }
 
     @Override
-    public void navigateAndSelect(String pathString) {
-        Path path = Paths.get(pathString);
-        Path parentPath = path.getParent();
-        Iterator<Path> it = path.iterator();
-        Path last = null;
-        while(it.hasNext()) {
-            last = it.next();
+    public void navigateAndSelect(String pathString) throws ExplorerIOException {
+        try {
+            File f = new File(pathString);
+            if(!f.exists()) {
+                throw new ExplorerIOException("Path: '" + pathString + "' is invalid!");
+            }
+            Path path = f.toPath();
+            Path parentPath = path.getParent();
+            Iterator<Path> it = path.iterator();
+            Path last = null;
+            while(it.hasNext()) {
+                last = it.next();
+            }
+            if(last == null) {
+                throw new ExplorerIOException("Path: '" + path + "' is invalid!");
+            }
+            navigate(parentPath.toString());
+            select(last.toString());
         }
-        if(last == null) {
-            throw new IllegalStateException("Invalid path: " + path);
+        catch(InvalidPathException e) {
+            throw new ExplorerIOException("Path: '" + pathString + "' is invalid!");
         }
-        navigate(parentPath.toString());
-        select(last.toString());
-
     }
 
     @Override
-    public void openFile(String path) {
+    public void openFile(String path) throws ExplorerIOException {
         try {
             File f = new File(path);
+            if(!f.exists()) {
+                throw new ExplorerIOException("Path: '" + path + "' is invalid!");
+            }
             String c = "cmd.exe /c start \"\" \"" + f.getAbsolutePath() + "\"";
-            LOGGER.info("Open file: " + c);
-            Runtime runtime = Runtime.getRuntime();
-            runtime.exec(c);
+            LOGGER.info("Open file: " + c + " ...");
 
+            Runtime runtime = Runtime.getRuntime();
+            Process p = runtime.exec(c);
+            int errorcode = p.waitFor();
+            if(errorcode != 0) {
+                throw new RuntimeException("Could not open file due runtime exec error with error code: " + errorcode);
+            }
+            LOGGER.debug("File opened!" + c);
         }
         catch(IOException e) {
+            throw new ExplorerIOException("IO Error with path: '" + path + "'!", e);
+        }
+        catch(InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, ExplorerIOException {
         System.out.println(LOGGER.isEnabled(Level.INFO));
         ExplorerWindows explorerWindowsTool = getInstance();
         System.out.println("Get open windows: ");
@@ -173,13 +196,6 @@ public class ExplorerWindows implements IExplorer {
             throw new RuntimeException(e);
         }
         explorerWindowsTool.navigateAndSelect("C:\\Users\\chris\\Music\\sorted\\Zoe Wees");
-
-        /*explorerWindowsTool.navigate("C:\\Users\\chris\\OneDrive\\Bilder\\Connichi 2019");
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }*/
     }
 
         public Set<Dispatch> getOpenWindows() {

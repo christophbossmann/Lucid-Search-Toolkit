@@ -5,7 +5,7 @@ public interface IExplorer {
 
     void select(String objectName);
 
-    void navigateAndSelect(String pathString);
+    void navigateAndSelect(String pathString) throws ExplorerIOException;
 
-    void openFile(String path);
+    void openFile(String path) throws ExplorerIOException;
 }
