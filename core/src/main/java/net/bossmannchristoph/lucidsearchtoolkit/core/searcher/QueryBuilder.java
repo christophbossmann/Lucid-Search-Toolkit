@@ -39,6 +39,10 @@ public class QueryBuilder {
         MultiFieldQueryParser queryParser = new MultiFieldQueryParser(
                 new String[] {"contents", "filenameelements"},
                 new StandardAnalyzer());
+
+        // Set the default operator to AND
+        queryParser.setDefaultOperator(QueryParser.Operator.AND);
+
         Query query = queryParser.parse(queryString);
         builder.add(query, BooleanClause.Occur.MUST);
         return this;

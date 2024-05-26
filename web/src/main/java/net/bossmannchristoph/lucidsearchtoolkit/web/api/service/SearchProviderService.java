@@ -59,10 +59,10 @@ public class SearchProviderService {
         try {
             MSearchResults mSearchResults = new MSearchResults();
             for (int searchproviderid : searchproviderids) {
-                SearchResults searchResults = innersearch(searchproviderid, searchString, searchPath, multifield, numberOfResults);
-                mSearchResults.addSearchResults(searchResults.getSearchResults(), searchproviderid);
+                addSearchResults(mSearchResults, searchproviderid, searchString, searchPath, multifield, numberOfResults);
             }
             mSearchResults.getsResults().sort((x, y) -> Float.compare(y.getScore(), x.getScore()));
+            mSearchResults.limit(numberOfResults);
             return mSearchResults;
         }
         catch(ParseException e) {
@@ -75,9 +75,8 @@ public class SearchProviderService {
 
     public MSearchResults search(Integer searchProviderId, String searchString, String searchPath, Boolean multifield, Integer numberOfResults) throws ApplicationException {
         try {
-            SearchResults searchResults = innersearch(searchProviderId, searchString, searchPath, multifield, numberOfResults);
             MSearchResults mSearchResults = new MSearchResults();
-            mSearchResults.addSearchResults(searchResults.getSearchResults(), searchProviderId);
+            addSearchResults(mSearchResults, searchProviderId, searchString, searchPath, multifield, numberOfResults);
             mSearchResults.getsResults().sort((x, y) -> Float.compare(y.getScore(), x.getScore()));
             return mSearchResults;
         }
@@ -87,6 +86,17 @@ public class SearchProviderService {
         catch(IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void addSearchResults(MSearchResults mSearchResults, int searchproviderid, String searchString, String searchPath, Boolean multifield, Integer numberOfResults) throws ApplicationException, IOException, ParseException {
+        Optional<SearchProvider> searchProviderOpt = getSearchProvider(searchproviderid);
+        if(searchProviderOpt.isEmpty()) {
+            throw new ApplicationException("Searchprovider with id: " + searchproviderid + " not available!", "SEARCHPROVIDER_NOT_AVAILABLE");
+        }
+        SearchProvider searchProvider = searchProviderOpt.get();
+        SearchResults searchResults = innersearch(searchproviderid, searchString, searchPath, multifield, numberOfResults);
+        mSearchResults.addSearchResults(searchResults.getSearchResults(), searchProvider.getId(), searchProvider.getIdentifier());
+        mSearchResults.setUsedquery(searchResults.getUsedQuery());
     }
 
     private SearchResults innersearch(Integer searchProviderId, String searchString, String searchPath,
@@ -109,6 +119,5 @@ public class SearchProviderService {
         SearchResults searchResults = searcher.search(searchString, searchPath, multifield, numberOfResults);
         searcher.prettyPrint(searchResults);
         return searchResults;
-
     }
 }

@@ -1,12 +1,14 @@
 package net.bossmannchristoph.lucidsearchtoolkit.web.api.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import net.bossmannchristoph.lucidsearchtoolkit.web.api.model.Response;
 import net.bossmannchristoph.lucidsearchtoolkit.web.api.model.ResponseMessage;
 import net.bossmannchristoph.lucidsearchtoolkit.web.api.service.ConfigService;
-import net.bossmannchristoph.lucidsearchtoolkit.web.exception.ApplicationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -26,9 +28,13 @@ public class ConfigController {
     @Autowired
     private ConfigService configService;
 
-    @RequestMapping(value = "api/searchprovider/uploadconfig", method = RequestMethod.POST, produces = "application/json")
-
-    public ResponseEntity<Response> uploadFile(@RequestParam("file") MultipartFile file) {
+    @Operation(summary = "Upload configuration file")
+    @RequestMapping(
+            value = "api/searchprovider/uploadconfig",
+            method = RequestMethod.POST,
+            produces = "application/json",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Response> uploadFile(@Parameter(description = "File to upload", required = true) @RequestParam("file") MultipartFile file) {
         // Define the directory where the file will be stored
         try {
             configService.storeConfig(file.getBytes());

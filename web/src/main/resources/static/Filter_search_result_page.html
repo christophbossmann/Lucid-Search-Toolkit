@@ -91,6 +91,7 @@
         .search table tr td.lastmodified {
             font-size: 1.2em;
             line-height: 50px;
+            min-width: 10em;
         }
 
         .search #price1,
@@ -100,6 +101,10 @@
         }
 
         /* below is customization ! */
+
+        .dropdown-menu .checkbox {
+            padding-left: 0.75em;
+        }
 
         textarea {
             resize: none;
@@ -133,24 +138,45 @@
     <script src="https://netdna.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <script type="text/javascript"></script>
     <script>
-        console.log('This is a log message');
+        var host = 'http://localhost:8080'
     </script>
 
     <script>
-        /*
-        $(document).ready(function(){
-            $('table').on('click', 'tr', function(){
-                console.log('Click handler executed!');
-                var href = $(this).data('href');
-                console.log('Navigating to:', href);  // Log the URL to the console
-                if (href) {
-                    window.open(href, '_blank');
-                    //window.location.href = href; //opens in same tab
-                } else {
-                    console.error('No href found for this row.');  // Log an error if href is undefined
-                }
-            });
-        });*/
+        document.addEventListener("DOMContentLoaded", 
+                function() {
+                    //document.getElementById("resulttable").innerHTML = ''; //remove all previous search results
+
+                    const getRequestUrl = host + '/api/searchprovider';
+                    console.log("get request url for searchprovider selection: " + getRequestUrl)
+                    fetch(getRequestUrl)
+                        .then(res => {
+                            return res.json();
+                        })
+                        .then(data => {
+                            let index = 0
+                            //console.log(JSON.stringify(data))
+                            //console.log("status: " + JSON.stringify(data.searchproviders))
+                            let checked = 'checked'
+                            data.searchproviders.forEach(result => {
+                                console.log("searchproviders -> foreach executed")
+                                index += 1
+                                let identifier = result.identifier
+                                let name = result.name
+                                let id = result.id
+                                const markup = `<li data-id=${id}>
+                                                    <div class="checkbox">
+                                                        <label>
+                                                            <input type="checkbox" ${checked}>${name} (${identifier})
+                                                        </label>
+                                                    </div>
+                                                </li>`;
+                                document.querySelector('#selectsearchprovider').insertAdjacentHTML('beforeend', markup)
+                                checked = ''
+                            })
+
+                    }).catch(error => console.log(error));
+
+                });
     </script>
 
 </head>
@@ -212,10 +238,31 @@
                                                 const numberOfSearchResults = encodeURI(document.getElementById("inputNumberOfSearchResults").value);
                                                 const multifieldSearch = encodeURI(document.getElementById("checkboxMultifieldSearch").checked);
                                                 const path = encodeURI(document.getElementById("inputPath").value);
+
+                                                var searchproviders = ''
+                                                document.querySelectorAll('#selectsearchprovider li').forEach(element => {
+            
+                                                    console.log("element_data-id: " + element.getAttribute('data-id'));
+                                                    const checkbox = element.querySelector('input[type="checkbox"]');
+                                                    const dataId = element.getAttribute('data-id');
+                                                    if (checkbox.checked) {
+                                                        if(searchproviders == '') {
+                                                            searchproviders = dataId;
+                                                        }
+                                                        else {
+                                                            searchproviders += (',' + dataId);
+                                                        }
+                                                        console.log('searchproviders: ' + searchproviders);
+                                                    }
+                                                });
+                                                if(searchproviders == '') {
+                                                    alert("Please select at least one search provider to continue!");
+                                                    return;   
+                                                } 
                                                 
                                                 document.getElementById("displaySearchString").textContent = document.getElementById("searchinputField").value;
 
-                                                const getRequestUrl = 'http://localhost:8080/api/searchprovider/1/search?searchString=' + searchString + '&searchPath=' + path + '&numberOfResults=' + numberOfSearchResults + '&multifield=' + multifieldSearch;
+                                                const getRequestUrl = host + '/api/searchprovider/' + searchproviders + '/search?searchString=' + searchString + '&searchPath=' + path + '&numberOfResults=' + numberOfSearchResults + '&multifield=' + multifieldSearch;
                                                 console.log("get request url: " + getRequestUrl)
                                                 fetch(getRequestUrl)
                                                     .then(res => {
@@ -223,32 +270,27 @@
                                                     })
                                                     .then(data => {
                                                         let index = 0
+                                                        //console.log("data: " + JSON.stringify(data))
+                                                        document.getElementById("usedquery").textContent = data.usedquery;
+
                                                         data.SearchResults.forEach(result => {
                                                             index += 1;
                                                             let path;
-                                                            let fileformat;
-                                                            let lastmodified;
                                                             result.fields.forEach(field => {
                                                                 switch (field.name) {
                                                                     case "path":
                                                                         path = field.value;
                                                                         break;
-                                                                    case "extension":
-                                                                        fileformat = field.value;
-                                                                        break;
-                                                                    case "modified":
-                                                                        lastmodified = field.value;
-                                                                        break;
                                                                 }
                                                             });
-                                                            const markup = `<tr data-href="http://apple.com">
+                                                            const markup = `<tr>
                                                         <td class="number text-center">${index}</td>
                                                         <td class="product"><strong>${path}</strong><br>Search result description 1</td>
-                                                        <td class="openfolder" data-path="${path}" text-center"><i class="fa fa-folder-open" aria-hidden="true"></i></td>
-                                                        <td class="openfile" data-path="${path}" text-center"><i class="fa fa-file" aria-hidden="true"></i></td>                                                       
+                                                        <td class="openfolder" data-path="${path}" data-searchproviderid="${result.searchproviderid}" text-center"><i class="fa fa-folder-open" aria-hidden="true"></i></td>
+                                                        <td class="openfile" data-path="${path}" data-searchproviderid="${result.searchproviderid}" text-center"><i class="fa fa-file" aria-hidden="true"></i></td>                                                       
                                                         <td class="score text-right">${result.score}</td>
-                                                        <td class="fileformat text-right">${fileformat}</td>
-                                                        <td class="lastmodified text-right">${lastmodified}</td>
+                                                        <td class="fileformat text-right">${result.searchprovideridentifier}</td>
+                                                        <td class="lastmodified text-right">${result.modified}</td>
                                                     </tr>`;
                                                             document.querySelector('#resulttable').insertAdjacentHTML('beforeend', markup)
 
@@ -260,7 +302,8 @@
                                                             element.addEventListener('click', function() {
                                                                 console.log('Click handler executed!');
                                                                 const path = element.getAttribute('data-path');
-                                                                const url = "http://localhost:8080/api/explorer/navigateandselectrelative?searchproviderid=1&path=" + encodeURI(path);
+                                                                const searchproviderid = element.getAttribute('data-searchproviderid');
+                                                                const url = host + "/api/explorer/navigateandselectrelative?searchproviderid=" + searchproviderid + "&path=" + encodeURI(path);
                                                                 fetch(url)
                                                                     .then(response => {
                                                                         if (!response.ok) {
@@ -287,7 +330,8 @@
                                                             element.addEventListener('click', function() {
                                                                 console.log('Click handler executed!');
                                                                 const path = element.getAttribute('data-path');
-                                                                const url = "http://localhost:8080/api/explorer/openfilerelative?searchproviderid=1&path=" + encodeURI(path);
+                                                                const searchproviderid = element.getAttribute('data-searchproviderid');
+                                                                const url = host + "/api/explorer/openfilerelative?searchproviderid=" + searchproviderid + "&path=" + encodeURI(path);
                                                                 fetch(url)
                                                                     .then(response => {
                                                                         if (!response.ok) {
@@ -315,7 +359,8 @@
                                     </span>
                                 </div>
 
-                                <p>Showing all results matching: <span id="displaySearchString"></span></p>
+                                <p><b>Showing all results matching: </b><span id="displaySearchString"></span></p>
+                                <p><b>Resulting query: </b><span id="usedquery"></span></p>
                                 <div class="padding"></div>
                                 <div class="row">
 
@@ -323,13 +368,9 @@
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-default dropdown-toggle"
                                                 data-toggle="dropdown">
-                                                Order by <span class="caret"></span>
+                                                Search provider <span class="caret"></span>
                                             </button>
-                                            <ul class="dropdown-menu" role="menu">
-                                                <li><a href="#">Name</a></li>
-                                                <li><a href="#">Date</a></li>
-                                                <li><a href="#">View</a></li>
-                                                <li><a href="#">Rating</a></li>
+                                            <ul class="dropdown-menu" role="menu" id="selectsearchprovider">
                                             </ul>
                                         </div>
                                     </div>
@@ -352,7 +393,7 @@
                                 </div>
 
 
-                                <ul class="pagination">
+                                <!-- <ul class="pagination">
                                     <li class="disabled"><a href="#">«</a></li>
                                     <li class="active"><a href="#">1</a></li>
                                     <li><a href="#">2</a></li>
@@ -360,7 +401,7 @@
                                     <li><a href="#">4</a></li>
                                     <li><a href="#">5</a></li>
                                     <li><a href="#">»</a></li>
-                                </ul>
+                                </ul> -->
 
                             </div>
 
@@ -371,16 +412,6 @@
 
         </div>
     </div>
-
-    <button id="openFolderBtn">Open Folder</button>
-
-    <script>
-        document.getElementById('openFolderBtn').addEventListener('click', function() {
-            console.log('Click!');
-            window.location.href = 'file:///C:/users';
-        });
-        console.log('hello!');
-    </script>
 
 </body>
 
