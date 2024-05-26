@@ -1,22 +1,30 @@
 package net.bossmannchristoph.lucidsearchtoolkit.web.api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import net.bossmannchristoph.lucidsearchtoolkit.core.searcher.LuceneSearcher;
 
 import java.util.Optional;
 
 public class SearchProvider {
 
-
     @JsonIgnore
     private LuceneSearcher luceneSearcher;
     private final Integer id;
     private final String name;
+    private final String indexpath;
+    private final String outputpath;
+    private final String filesrootpath;
 
-    public SearchProvider(Integer id, String name, String indexPath, String outputPath) {
+    public SearchProvider(@JsonProperty("id") Integer id, @JsonProperty("name") String name,
+                          @JsonProperty("indexpath") String indexpath, @JsonProperty("outputpath") String outputpath,
+                          @JsonProperty("filesrootpath") String filesrootpath) {
         this.id = id;
         this.name = name;
-        initLuceneSearcher(indexPath, outputPath);
+        this.indexpath = indexpath;
+        this.outputpath = outputpath;
+        this.filesrootpath = filesrootpath;
+        initLuceneSearcher(indexpath, outputpath);
     }
 
     private void initLuceneSearcher(String indexPath, String outputPath) {
@@ -35,6 +43,18 @@ public class SearchProvider {
 
     public String getName() {
         return name;
+    }
+
+    public String getIndexpath() {
+        return indexpath;
+    }
+
+    public String getOutputpath() {
+        return outputpath;
+    }
+
+    public String getFilesrootpath() {
+        return filesrootpath;
     }
 
     public LuceneSearcher getLuceneSearcher() {

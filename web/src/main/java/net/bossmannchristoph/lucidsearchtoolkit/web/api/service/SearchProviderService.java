@@ -1,11 +1,15 @@
 package net.bossmannchristoph.lucidsearchtoolkit.web.api.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.bossmannchristoph.lucidsearchtoolkit.core.searcher.LuceneSearcher;
 import net.bossmannchristoph.lucidsearchtoolkit.core.searcher.SearchResults;
 import net.bossmannchristoph.lucidsearchtoolkit.web.api.model.MSearchResults;
 import net.bossmannchristoph.lucidsearchtoolkit.web.api.model.SearchProvider;
 import net.bossmannchristoph.lucidsearchtoolkit.web.exception.ApplicationException;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -16,23 +20,35 @@ import java.util.Optional;
 
 @Service
 public class SearchProviderService {
+    @Autowired
+    private ConfigService configService;
 
-    private final List<SearchProvider> indexProviderList = new ArrayList<>();
-
+    ObjectMapper objectMapper;
     public SearchProviderService() {
-        SearchProvider indexProvider1 = new SearchProvider(1, "InitalProvider", "C:\\Users\\chris\\dev\\Lucid-Search-Toolkit\\core\\documents\\index", null);
-        indexProviderList.add(indexProvider1);
+        objectMapper = new ObjectMapper();
     }
 
-    public List<SearchProvider> getIndexProviderList() {
-        return indexProviderList;
+    public List<SearchProvider> getSearchProviderList() {
+        try {
+            JsonNode configJson = configService.getConfig();
+            List<SearchProvider> searchProviderList = new ArrayList<>();
+            JsonNode searchprovidersNode = configJson.get("searchproviders");
+            for(JsonNode node : searchprovidersNode) {
+                SearchProvider sP = objectMapper.treeToValue(node, SearchProvider.class);
+                searchProviderList.add(sP);
+            }
+            return searchProviderList;
+        }
+        catch(JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Optional<SearchProvider> getSearchProvider(Integer id) {
         Optional<SearchProvider> optional = Optional.empty();
-        for(SearchProvider indexProvider : indexProviderList) {
-            if(Objects.equals(indexProvider.getId(), id)) {
-                optional = Optional.of(indexProvider);
+        for(SearchProvider searchProvider : getSearchProviderList()) {
+            if(Objects.equals(searchProvider.getId(), id)) {
+                optional = Optional.of(searchProvider);
                 break;
             }
         }
@@ -50,7 +66,7 @@ public class SearchProviderService {
             return mSearchResults;
         }
         catch(ParseException e) {
-            throw new ApplicationException("Could not parse query: " + e.getMessage());
+            throw new ApplicationException("Could not parse query: " + e.getMessage(), "QUERY_PARSE_NOT_SUCCESSFUL");
         }
         catch(IOException e) {
             throw new RuntimeException(e);
@@ -66,7 +82,7 @@ public class SearchProviderService {
             return mSearchResults;
         }
         catch(ParseException e) {
-            throw new ApplicationException("Could not parse query: " + e.getMessage());
+            throw new ApplicationException("Could not parse query: " + e.getMessage(), "QUERY_PARSE_NOT_SUCCESSFUL");
         }
         catch(IOException e) {
             throw new RuntimeException(e);
@@ -81,11 +97,12 @@ public class SearchProviderService {
             multifield = false;
         }
         if(numberOfResults == null) {
-            throw new ApplicationException("NumberOfResults not provided!");
+            throw new ApplicationException("NumberOfResults not provided!", "NUMBER_OF_RESULTS_MISSING");
         }
         SearchProvider searchProvider;
         if(searchProviderOptional.isEmpty()) {
-            throw new ApplicationException("SearchProvider not found with id: " + searchProviderId + "!");
+            throw new ApplicationException("SearchProvider not found with id: " + searchProviderId + "!",
+                    "QUERY_PARSE_NOT_SUCCESSFUL");
         }
         searchProvider = searchProviderOptional.get();
         LuceneSearcher searcher = searchProvider.getLuceneSearcher();

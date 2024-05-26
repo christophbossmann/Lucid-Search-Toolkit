@@ -64,4 +64,7 @@ core/documents/*
 
 explorertools/src/lib/*
 
+documents/*
+serverfiles/*
+
 

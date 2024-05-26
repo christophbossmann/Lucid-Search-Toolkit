@@ -18,6 +18,8 @@ public class HelloController {
 
     @RequestMapping(value = "hello/{helloId}", method = RequestMethod.GET)
     public String helloWorld(@PathVariable int helloId) {
+        String currentDir = System.getProperty("user.dir");
+        System.out.println("Current dir using System: " + currentDir);
         return "Hello World: " + helloId + "!";
     }
 

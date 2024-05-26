@@ -6,7 +6,6 @@
     <version>1.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>net.bossmannchristoph.lucidsearchtoolkit</groupId>
   <artifactId>lucidsearchtoolkit-core</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <build>
@@ -32,6 +31,16 @@
                 <mainClass>net.bossmannchristoph.lucidsearchtoolkit.core.ConsoleInterfaceHandler</mainClass>
               </transformer>
             </transformers>
+            <filters>
+              <filter>
+                <artifact>*:*</artifact>
+                <excludes>
+                  <exclude>META-INF/*.SF</exclude>
+                  <exclude>META-INF/*.DSA</exclude>
+                  <exclude>META-INF/*.RSA</exclude>
+                </excludes>
+              </filter>
+            </filters>
           </configuration>
         </plugin>
       </plugins>
@@ -44,6 +53,13 @@
       <version>2.7.0</version>
       <type>pom</type>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-dependencies</artifactId>
+      <version>3.2.4</version>
+      <type>pom</type>
+      <scope>import</scope>
     </dependency>
   </dependencies>
   <properties>

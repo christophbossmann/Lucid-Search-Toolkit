@@ -22,7 +22,7 @@ public class IndexerConsoleInterfaceHandler implements IConsoleHandler {
     
 	public static final String MODE_INDEX = "index";
 	
-	public static final String defaultIndexFileTypes = "txt,pdf,docx,doc,xlsx,xls,ppt,pptx";
+	public static final String defaultIndexFileTypes = "txt,pdf,docx,doc,xlsx,xls,ppt,pptx,odt,ods,odp";
 	
     public IndexerConsoleInterfaceHandler(Scanner sc) {
     	luceneIndexerWithTika = new LuceneIndexerWithTika();

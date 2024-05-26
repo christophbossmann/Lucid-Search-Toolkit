@@ -85,11 +85,11 @@ public class LuceneIndexerWithTika {
 
 	public static void main(String[] args) {
 		// Input folder
-		String docsPath = "C:\\Users\\chris\\dev\\IndexAndSearchTool\\documents\\input\\pdfdata\\Programmieren";
+		String docsPath = "C:\\Users\\chris\\dev\\Lucid-Search-Toolkit\\core\\documents\\input";
 		// Output folder
-		String indexPath = "C:\\Users\\chris\\dev\\IndexAndSearchTool\\documents\\index";
+		String indexPath = "C:\\Users\\chris\\dev\\Lucid-Search-Toolkit\\core\\documents\\index";
 		// Output folder
-		String outputPath = "C:\\Users\\chris\\dev\\IndexAndSearchTool\\documents\\output";
+		String outputPath = "C:\\Users\\chris\\dev\\Lucid-Search-Toolkit\\core\\documents\\output";
 
 		String types = IndexerConsoleInterfaceHandler.defaultIndexFileTypes;
 

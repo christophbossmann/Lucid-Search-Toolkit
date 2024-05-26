@@ -9,4 +9,9 @@ public class WebController {
     public String index() {
         return "Filter_search_result_page.html";
     }
+
+    @GetMapping("/liveconsole")
+    public String liveconsole() {
+        return "liveconsole.html";
+    }
 }

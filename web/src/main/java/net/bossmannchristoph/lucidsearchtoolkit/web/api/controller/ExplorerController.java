@@ -28,14 +28,14 @@ public class ExplorerController {
         }
     }
 
-    @RequestMapping(value = "api/explorer/openfile", method = RequestMethod.GET)
+    @RequestMapping(value = "api/explorer/openfile", method = RequestMethod.GET, produces = "application/json")
     public ExplorerResult openfile(@RequestParam String path) throws ApplicationException {
         explorerService.openFile(path);
         return new ExplorerResult(LocalDateTime.now(), HttpStatus.OK.value(), "OPEN_FILE_SUCCESSFUL",
                 "Opened file with path '" + path + "' successully!");
     }
 
-    @RequestMapping(value = "api/explorer/openfilerelative", method = RequestMethod.GET)
+    @RequestMapping(value = "api/explorer/openfilerelative", method = RequestMethod.GET, produces = "application/json")
     public ExplorerResult openfileRelative(@RequestParam String path, @RequestParam int searchproviderid)
             throws ApplicationException {
         explorerService.openFileRelative(path, searchproviderid);
@@ -43,7 +43,7 @@ public class ExplorerController {
                 "Opened file with path '" + path + "' successully!");
     }
 
-    @RequestMapping(value = "api/explorer/navigateandselect", method = RequestMethod.GET)
+    @RequestMapping(value = "api/explorer/navigateandselect", method = RequestMethod.GET, produces = "application/json")
     public ExplorerResult navigateAndSelect(@RequestParam String path) throws ApplicationException  {
         explorerService.navigateAndSelect(path);
         return new ExplorerResult(LocalDateTime.now(), HttpStatus.OK.value(), "NAVIGATE_SELECT_SUCCESSFUL",

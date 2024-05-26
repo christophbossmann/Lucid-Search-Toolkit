@@ -65,6 +65,24 @@
             line-height: 50px;
         }
 
+        .search table tr td.openfolder {
+            font-size: 1.8em;
+            line-height: 50px;
+        }
+
+        .fa-folder-open:hover {
+            color: orange;
+        }
+
+        .search table tr td.openfile {
+            font-size: 1.8em;
+            line-height: 50px;
+        }
+
+        .fa-file:hover {
+            color: orange;
+        }
+
         .search table tr td.fileformat {
             font-size: 1.2em;
             line-height: 50px;
@@ -119,6 +137,7 @@
     </script>
 
     <script>
+        /*
         $(document).ready(function(){
             $('table').on('click', 'tr', function(){
                 console.log('Click handler executed!');
@@ -131,7 +150,7 @@
                     console.error('No href found for this row.');  // Log an error if href is undefined
                 }
             });
-        });
+        });*/
     </script>
 
 </head>
@@ -225,6 +244,8 @@
                                                             const markup = `<tr data-href="http://apple.com">
                                                         <td class="number text-center">${index}</td>
                                                         <td class="product"><strong>${path}</strong><br>Search result description 1</td>
+                                                        <td class="openfolder" data-path="${path}" text-center"><i class="fa fa-folder-open" aria-hidden="true"></i></td>
+                                                        <td class="openfile" data-path="${path}" text-center"><i class="fa fa-file" aria-hidden="true"></i></td>                                                       
                                                         <td class="score text-right">${result.score}</td>
                                                         <td class="fileformat text-right">${fileformat}</td>
                                                         <td class="lastmodified text-right">${lastmodified}</td>
@@ -232,7 +253,63 @@
                                                             document.querySelector('#resulttable').insertAdjacentHTML('beforeend', markup)
 
                                                         });
-                                                    }).catch(error => console.log(error));
+
+                                                        document.querySelectorAll('.openfolder').forEach(function(element) {
+                                                        console.log('Click handler activated!');
+
+                                                            element.addEventListener('click', function() {
+                                                                console.log('Click handler executed!');
+                                                                const path = element.getAttribute('data-path');
+                                                                const url = "http://localhost:8080/api/explorer/navigateandselectrelative?searchproviderid=1&path=" + encodeURI(path);
+                                                                fetch(url)
+                                                                    .then(response => {
+                                                                        if (!response.ok) {
+                                                                            return response.json().then(errorData => {
+                                                                                throw new Error('Network response was not ok: ' + JSON.stringify(errorData));
+                                                                            });
+                                                                        }
+                                                                        return response.json(); // Assuming the API returns JSON, otherwise adjust accordingly
+                                                                    })
+                                                                    .then(data => {
+                                                                        console.log('Request successful:', data);
+                                                                        // Handle the response data as needed
+                                                                    })
+                                                                    .catch(error => {
+                                                                        console.error('There has been a problem with your fetch operation:', error);
+                                                                        alert('There has been a problem with your fetch operation: ' + error.message)
+                                                                    });
+                                                            });
+                                                        });
+                                                        
+                                                        document.querySelectorAll('.openfile').forEach(function(element) {
+                                                        console.log('Click handler activated!');
+
+                                                            element.addEventListener('click', function() {
+                                                                console.log('Click handler executed!');
+                                                                const path = element.getAttribute('data-path');
+                                                                const url = "http://localhost:8080/api/explorer/openfilerelative?searchproviderid=1&path=" + encodeURI(path);
+                                                                fetch(url)
+                                                                    .then(response => {
+                                                                        if (!response.ok) {
+                                                                            return response.json().then(errorData => {
+                                                                                throw new Error('Network response was not ok: ' + JSON.stringify(errorData));
+                                                                            });
+                                                                        }
+                                                                        return response.json(); // Assuming the API returns JSON, otherwise adjust accordingly
+                                                                    })
+                                                                    .then(data => {
+                                                                        console.log('Request successful:', data);
+                                                                        // Handle the response data as needed
+                                                                    })
+                                                                    .catch(error => {
+                                                                        console.error('There has been a problem with your fetch operation:', error);
+                                                                        alert('There has been a problem with your fetch operation: ' + error.message)
+                                                                    });
+                                                            });
+                                                        });    
+
+                                                }).catch(error => console.log(error));
+
                                             }
                                         </script>
                                     </span>
@@ -299,8 +376,10 @@
 
     <script>
         document.getElementById('openFolderBtn').addEventListener('click', function() {
+            console.log('Click!');
             window.location.href = 'file:///C:/users';
         });
+        console.log('hello!');
     </script>
 
 </body>

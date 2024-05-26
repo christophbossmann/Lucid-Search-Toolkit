@@ -1,17 +1,18 @@
 package net.bossmannchristoph.lucidsearchtoolkit.web.exception;
 
+import net.bossmannchristoph.lucidsearchtoolkit.web.api.model.Response;
+import net.bossmannchristoph.lucidsearchtoolkit.web.api.model.ResponseMessage;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingRequestValueException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -21,26 +22,38 @@ public class GlobalExceptionHandler {
     Logger LOGGER = LogManager.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(value = {ApplicationException.class})
-    public ResponseEntity<ErrorMessage>handleApplicationException(ApplicationException e) {
-        ErrorMessage errorMessage = new ErrorMessage(e.getMessage(), HttpStatus.BAD_REQUEST.value());
-        return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<Response>handleApplicationException(ApplicationException e) {
+        Response errorMessage = new ResponseMessage(e.getMessage(), e.getStatus(), HttpStatus.BAD_REQUEST.value());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        LOGGER.log(Level.WARN, "Application Exception: " + e.getStatus() + ", " + e.getMessage());
+        return new ResponseEntity<>(errorMessage, headers, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MissingRequestValueException.class)
-    public ResponseEntity<ErrorMessage> MissingRequestValueException(MissingRequestValueException ex) {
-        ErrorMessage errorMessage = new ErrorMessage(ex.getMessage(), HttpStatus.BAD_REQUEST.value());
-        return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<Response> MissingRequestValueException(MissingRequestValueException ex) {
+        Response errorMessage = new ResponseMessage(ex.getMessage(), "MISSING_VALUE", HttpStatus.BAD_REQUEST.value());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        LOGGER.log(Level.WARN, "MissingRequestValueException: " + ex.getMessage());
+        return new ResponseEntity<>(errorMessage, headers, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorMessage> Exception(Exception ex) {
+    public ResponseEntity<Response> Exception(Exception ex) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         ex.printStackTrace(pw);
         LOGGER.log(Level.ERROR, "Unknown error occurred: \n" + sw);
-        return new ResponseEntity<>(new ErrorMessage(
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        return new ResponseEntity<>(new ResponseMessage(
                 "Unexpected error occurred, see server logs for more details!",
-                HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                "UNEXPECTED_TECHNICAL_ERROR", HttpStatus.INTERNAL_SERVER_ERROR.value()), headers,
                 HttpStatus.INTERNAL_SERVER_ERROR);
     }
 

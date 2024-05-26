@@ -5,8 +5,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
+//@EnableScheduling -> TEMPORARILIY DISABLED BECAUSE NOT USED!!
 public class LuceneSearchToolkitWebApplication {
 
 	public static final Logger LOGGER = LogManager.getLogger(LuceneSearchToolkitWebApplication.class);

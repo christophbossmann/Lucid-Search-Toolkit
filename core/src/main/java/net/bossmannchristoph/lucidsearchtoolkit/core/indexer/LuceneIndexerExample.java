@@ -1,4 +1,4 @@
-package net.bossmannchristoph.lucidsearchtoolkit.indexer;
+package net.bossmannchristoph.lucidsearchtoolkit.core.indexer;
 
 import java.io.IOException;
 import java.io.InputStream;
