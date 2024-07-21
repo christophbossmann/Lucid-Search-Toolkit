@@ -57,17 +57,22 @@ public class LuceneIndexerWithTika {
 	private static final int DELETE_DUE_TO_USER = 1;
 	private static final int DELETE_DUE_TO_FILETYPE = 2;
 	
-	public static final int MESSAGE_CREATED = 0;
-	public static final int MESSAGE_MODIFIED = 1;
+	public static final int MESSAGE_CREATING = 0;
+	public static final int MESSAGE_MODIFING = 1;
 	public static final int MESSAGE_NOT_CHANGED = 2;
 	public static final int MESSAGE_TIME_LIMIT_REACHED = 3;
 	public static final int MESSAGE_EMPTY_FILE_IGNORED = 4;
 	public static final int MESSAGE_IGNORED_FILETYPE = 5;
 	public static final int MESSAGE_DELETED_IGNORED_FILETYPE = 6;
 	public static final int MESSAGE_DELETED_USER = 7;
+	public static final int MESSAGE_INDEXED_WITH_CONTENT = 8;
+	public static final int MESSAGE_INDEXED_WITHOUT_CONTENT = 9;
+
 	private static final Logger LOGGER = LogManager.getLogger(LuceneIndexerWithTika.class.getName());
 	public static final Level INFO = Level.INFO;
-	private Collection<String> indexedFileTypes;
+	private Collection<String> indexedWithContentFileTypes;
+
+	private Collection<String> ignoredFileTypes;
 	private Tika tika;
 	private Path docDir;
 	private Path indexLuceneDir;
@@ -91,19 +96,20 @@ public class LuceneIndexerWithTika {
 		// Output folder
 		String outputPath = "C:\\Users\\chris\\dev\\Lucid-Search-Toolkit\\core\\documents\\output";
 
-		String types = IndexerConsoleInterfaceHandler.defaultIndexFileTypes;
+		String withContentTypes = IndexerConsoleInterfaceHandler.defaultIndexedWithContentFileTypes;
+		String ignoreTypes = IndexerConsoleInterfaceHandler.defaultIgnoreFileTypes;
 
-		singlePerform(docsPath, indexPath, outputPath, types);
+		singlePerform(docsPath, indexPath, outputPath, withContentTypes, ignoreTypes);
 
 	}
 
-	public static void singlePerform(String docsPath, String indexPath, String outputPath, String indexedFileTypes) {
+	public static void singlePerform(String docsPath, String indexPath, String outputPath, String indexedFileTypes, String ignoredFileTypes) {
 		ExceptionHandler exceptionHandler = new ExceptionHandler();
 
 		try {
 			LuceneIndexerWithTika luceneIndexerWithTika = new LuceneIndexerWithTika();
 			luceneIndexerWithTika.prepareOutputAndLogging(outputPath);
-			luceneIndexerWithTika.prepare(docsPath, indexPath, indexedFileTypes);
+			luceneIndexerWithTika.prepare(docsPath, indexPath, indexedFileTypes, ignoredFileTypes);
 			luceneIndexerWithTika.indexDocs();
 			luceneIndexerWithTika.close();
 		} catch (Exception e) {
@@ -126,7 +132,7 @@ public class LuceneIndexerWithTika {
 	}
 
 	@SuppressWarnings("unchecked")
-	public void prepare(String docsPath, String indexPath, String indexedFileTypes)
+	public void prepare(String docsPath, String indexPath, String indexedWithContentFileTypes, String ignoredFileTypes)
 			throws IOException, ClassNotFoundException {
 		LOGGER.log(INFO, "preparing started!");
 		tika = new Tika();
@@ -134,7 +140,8 @@ public class LuceneIndexerWithTika {
 		// Input Path Variable
 		docDir = Paths.get(docsPath);
 		indexDir = Paths.get(indexPath);
-		this.indexedFileTypes = Arrays.asList(indexedFileTypes.split(","));
+		this.indexedWithContentFileTypes = Arrays.asList(indexedWithContentFileTypes.split(","));
+		this.ignoredFileTypes = Arrays.asList(ignoredFileTypes.split(","));
 		indexLuceneDir = Paths.get(indexDir.toString(), "lucene");
 		indexLuceneDir.toFile().mkdirs();
 		Directory dir = FSDirectory.open(indexLuceneDir);
@@ -242,7 +249,7 @@ public class LuceneIndexerWithTika {
 
 	private void indexDoc(Path file, long lastModified) {
 		//String indexedFileString = Utilities.getDocPath(docDir, file.toFile()).toString().toLowerCase();
-		IndexDocTask t = IndexDocTask.getTaskInstance(indexedFileTypes, fileOutputPrintStream, tika, fileMap,
+		IndexDocTask t = IndexDocTask.getTaskInstance(indexedWithContentFileTypes, ignoredFileTypes, fileOutputPrintStream, tika, fileMap,
 				writer);
 		String indexedFileString = t.init(file, lastModified, docDir);
 		Future<?> future = executor.submit(t);
@@ -262,10 +269,10 @@ public class LuceneIndexerWithTika {
 	public static void printIndexMessage(int type, String file, PrintStream out) {
 		String typeString = "";
 		switch(type) {
-			case MESSAGE_CREATED:
+			case MESSAGE_CREATING:
 				typeString = "CREATED -> INDEXING";
 				break;
-			case MESSAGE_MODIFIED:
+			case MESSAGE_MODIFING:
 				typeString = "UPDATED -> RE-INDEXING";
 				break;
 			case MESSAGE_NOT_CHANGED:
@@ -286,6 +293,7 @@ public class LuceneIndexerWithTika {
 			case MESSAGE_DELETED_IGNORED_FILETYPE:
 				typeString = "IGNORED FILETYPE, DELETED FROM INDEX";
 				break;
+
 			default:
 				throw new IllegalStateException("Not supported index type: " + type);			
 		}
@@ -303,8 +311,7 @@ public class LuceneIndexerWithTika {
 				.collect(Collectors.toMap(v -> v, v -> DELETE_DUE_TO_USER));
 
 		for (String file : existingFiles) {
-			String fileExtension = FilenameUtils.getExtension(file);
-			if (!indexedFileTypes.contains(fileExtension)) {
+			if (IndexDocTask.isToBeIgnoredForIndexing(ignoredFileTypes, file)) {
 				toBeDeleted.replace(file, DELETE_DUE_TO_FILETYPE);
 			} else {
 				toBeDeleted.replace(file, NOT_DELETE);

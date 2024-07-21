@@ -27,7 +27,8 @@ import org.apache.tika.exception.ZeroByteFileException;
 
 public class IndexDocTask implements Runnable {
 
-	public Collection<String> indexedFileTypes;
+	private Collection<String> ignoredFileTypes;
+	public Collection<String> indexedWithContentFileTypes;
 	public PrintStream out;
 	public Tika tika;
 	public Map<String, Long> fileMap;
@@ -42,18 +43,20 @@ public class IndexDocTask implements Runnable {
 
 	private long lastModified;
 
-	private IndexDocTask(Collection<String> indexedFileTypes, PrintStream out, Tika tika, Map<String, Long> fileMap,
+	private IndexDocTask(Collection<String> indexedWithContentFileTypes, Collection<String> ignoredFileTypes,
+						 PrintStream out, Tika tika, Map<String, Long> fileMap,
 			IndexWriter writer) {
-		this.indexedFileTypes = indexedFileTypes;
+		this.indexedWithContentFileTypes = indexedWithContentFileTypes;
+		this.ignoredFileTypes = ignoredFileTypes;
 		this.out = out;
 		this.tika = tika;
 		this.fileMap = fileMap;
 		this.writer = writer;
 	}
 
-	public static IndexDocTask getTaskInstance(Collection<String> indexedFileTypes, PrintStream out, Tika tika,
-			Map<String, Long> fileMap, IndexWriter writer) {
-		return new IndexDocTask(indexedFileTypes, out, tika, fileMap, writer);
+	public static IndexDocTask getTaskInstance(Collection<String> indexedWithContentFileTypes, Collection<String> ignoredFileTypes,
+											   PrintStream out, Tika tika, Map<String, Long> fileMap, IndexWriter writer) {
+		return new IndexDocTask(indexedWithContentFileTypes, ignoredFileTypes, out, tika, fileMap, writer);
 	}
 
 	public String init(Path file, long lastModified, Path docDir) {
@@ -84,7 +87,7 @@ public class IndexDocTask implements Runnable {
 			LuceneIndexerWithTika.printIndexMessage(LuceneIndexerWithTika.MESSAGE_NOT_CHANGED, indexedFileString, out);
 			return;
 		}
-		if (!indexedFileTypes.contains(FilenameUtils.getExtension(indexedFileString))) {
+		if (isToBeIgnoredForIndexing(ignoredFileTypes, indexedFileString)) {
 			LuceneIndexerWithTika.printIndexMessage(LuceneIndexerWithTika.MESSAGE_IGNORED_FILETYPE, indexedFileString, out);
 			return;
 		}
@@ -102,17 +105,23 @@ public class IndexDocTask implements Runnable {
 
 			Long previousValue = fileMap.put(indexedFileString, lastModified);
 			if (previousValue == null) {
-				LuceneIndexerWithTika.printIndexMessage(LuceneIndexerWithTika.MESSAGE_CREATED, indexedFileString, out);
+				LuceneIndexerWithTika.printIndexMessage(LuceneIndexerWithTika.MESSAGE_CREATING, indexedFileString, out);
 			} else {
-				LuceneIndexerWithTika.printIndexMessage(LuceneIndexerWithTika.MESSAGE_MODIFIED, indexedFileString, out);
+				LuceneIndexerWithTika.printIndexMessage(LuceneIndexerWithTika.MESSAGE_MODIFING, indexedFileString, out);
 			}
-			int availableBefore = stream.available();
-			String extractedContent = tika.parseToString(stream);
-			LOGGER.debug("File path: " + file.toString() +
-					"\nStream (before) available: " + availableBefore +
-					"\nExtracted Content (bytes): " + extractedContent.getBytes().length);
-			stream.close();
-
+			String extractedContent;
+			if(indexedWithContentFileTypes.contains(FilenameUtils.getExtension(indexedFileString))) {
+				int availableBefore = stream.available();
+				extractedContent = tika.parseToString(stream);
+				LOGGER.debug("File path: " + file.toString() +
+						"\nStream (before) available: " + availableBefore +
+						"\nExtracted Content (bytes): " + extractedContent.getBytes().length);
+				stream.close();
+			}
+			else {
+				extractedContent = "";
+				LOGGER.debug("File path: " + file.toString() + ", indexing without content due to filetype!");
+			}
 			doc.add(new StringField("filename",
 					file.toFile().getName(), Field.Store.YES));
 			doc.add(new StringField("extension",
@@ -141,10 +150,21 @@ public class IndexDocTask implements Runnable {
 			doc.add(new TextField("pathelements", sjPathElements.toString(), Store.YES));
 			doc.add(new TextField("filenameelements", fileNameElements, Store.YES));
 			writer.updateDocument(new Term("path", indexedFileString), doc);
+			if(extractedContent.isEmpty()) {
+				LOGGER.info("Indexed without content successfully!");
+			}
+			else {
+				LOGGER.info("Indexed successfully!");
+			}
 
 		} catch (ZeroByteFileException e) {
 			LuceneIndexerWithTika.printIndexMessage(LuceneIndexerWithTika.MESSAGE_EMPTY_FILE_IGNORED, indexedFileString, out);
 		}
+	}
+
+	public static boolean isToBeIgnoredForIndexing(Collection<String> ignoredFileTypes, String indexedFileString) {
+		return ignoredFileTypes.contains(FilenameUtils.getExtension(indexedFileString)) ||
+				FilenameUtils.getBaseName(indexedFileString).isEmpty();
 	}
 
 }
